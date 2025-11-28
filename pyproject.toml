@@ -1,0 +1,6 @@
+[tool.black]
+exclude = '''
+/(
+    (\.venv|venv|env|envs|autogen_test|.*/\.?venv.*|.*/env.*)
+)/
+'''
