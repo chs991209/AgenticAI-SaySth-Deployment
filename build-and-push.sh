@@ -20,20 +20,34 @@ fi
 
 DOCKERHUB_USERNAME=$1
 
-# Docker Hub 로그인 확인
-if ! docker info | grep -q "Username"; then
-    echo -e "${YELLOW}Docker Hub에 로그인하세요: docker login${NC}"
-    exit 1
+# Docker Hub 로그인 확인 (선택적 - push 시도 시 자동으로 인증 요구됨)
+# macOS에서는 docker info가 Username을 출력하지 않을 수 있으므로,
+# 실제 push 시도 시 인증이 필요하면 자동으로 에러가 발생합니다.
+if ! test -f ~/.docker/config.json; then
+    echo -e "${YELLOW}경고: Docker Hub 로그인 정보를 찾을 수 없습니다.${NC}"
+    echo -e "${YELLOW}로그인하지 않았다면: docker login${NC}"
+    echo -e "${YELLOW}계속 진행합니다... (push 시도 시 인증이 필요하면 에러 발생)${NC}"
+    echo ""
 fi
 
 echo -e "${GREEN}=== Docker Hub 이미지 빌드 및 푸시 시작 ===${NC}"
 echo -e "${GREEN}Docker Hub 사용자명: ${DOCKERHUB_USERNAME}${NC}"
+
+# 아키텍처 감지 (Jetson에서 직접 빌드 시 --platform 플래그 불필요)
+ARCH=$(uname -m)
+if [ "$ARCH" = "aarch64" ]; then
+    echo -e "${GREEN}Jetson AGX Orin (ARM64)에서 네이티브 빌드 감지${NC}"
+    PLATFORM_FLAG=""
+else
+    echo -e "${GREEN}크로스 컴파일 모드 (--platform linux/arm64)${NC}"
+    PLATFORM_FLAG="--platform linux/arm64"
+fi
 echo ""
 
 # Agentic AI Server 빌드
 echo -e "${GREEN}[1/4] Agentic AI Server 빌드 중...${NC}"
 docker build -f Dockerfile.agentic-ai \
-  --platform linux/arm64 \
+  ${PLATFORM_FLAG} \
   -t ${DOCKERHUB_USERNAME}/agentic-ai-server:latest \
   -t ${DOCKERHUB_USERNAME}/agentic-ai-server:arm64 \
   .
@@ -61,7 +75,7 @@ fi
 echo -e "${GREEN}[3/4] Frontend Server 빌드 중...${NC}"
 cd frontend-server
 docker build \
-  --platform linux/arm64 \
+  ${PLATFORM_FLAG} \
   -t ${DOCKERHUB_USERNAME}/frontend-server:latest \
   -t ${DOCKERHUB_USERNAME}/frontend-server:arm64 \
   .
