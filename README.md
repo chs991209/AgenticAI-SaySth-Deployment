@@ -7,6 +7,7 @@
 - Python 3.12 이상
 - Node.js 18 이상 및 npm
 - OpenAI API Key
+- YouTube Data API v3 Key (YouTube 비디오 검색 기능 사용 시)
 
 ## 설치 및 실행 가이드
 
@@ -22,7 +23,9 @@ pip install -r requirements.txt
 
 # 환경 변수 설정
 cp .env.example .env
-# .env 파일을 열어서 OPENAI_API_KEY를 설정하세요
+# .env 파일을 열어서 다음 API 키들을 설정하세요:
+# - OPENAI_API_KEY: OpenAI API 키 (필수)
+# - YOUTUBE_API_KEY: YouTube Data API v3 키 (YouTube 비디오 검색 기능 사용 시 필수)
 ```
 
 ### 2. Agentic AI Server 실행

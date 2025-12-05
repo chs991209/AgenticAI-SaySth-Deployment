@@ -17,6 +17,7 @@
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
+YOUTUBE_API_KEY=your_youtube_api_key_here
 STT_SERVER_URL=http://host.docker.internal:8003
 FRONTEND_SERVER_URL=http://localhost:3000
 ```
@@ -57,6 +58,7 @@ docker run -d \
   --name agentic-ai-server \
   -p 8002:8002 \
   -e OPENAI_API_KEY=your_openai_api_key_here \
+  -e YOUTUBE_API_KEY=your_youtube_api_key_here \
   agentic-ai-server:latest
 ```
 
@@ -81,6 +83,7 @@ docker run -d \
 
 ### Agentic AI Server
 - `OPENAI_API_KEY` (필수): OpenAI API 키
+- `YOUTUBE_API_KEY` (필수): YouTube Data API v3 키 (YouTube 비디오 검색 기능 사용 시)
 
 ### Frontend Server
 - `AGENTIC_AI_SERVER_URL` (필수): Agentic AI 서버 URL

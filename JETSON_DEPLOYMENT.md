@@ -60,6 +60,7 @@ DOCKERHUB_USERNAME=chs991209
 
 # Agentic AI Server 환경 변수
 OPENAI_API_KEY=your_openai_api_key_here
+YOUTUBE_API_KEY=your_youtube_api_key_here
 
 # Frontend Server 환경 변수
 STT_SERVER_URL=http://host.docker.internal:8003
@@ -67,7 +68,9 @@ FRONTEND_SERVER_URL=http://localhost:3000
 EOF
 ```
 
-**중요**: `OPENAI_API_KEY`는 반드시 설정해야 합니다.
+**중요**: 
+- `OPENAI_API_KEY`는 반드시 설정해야 합니다.
+- `YOUTUBE_API_KEY`는 YouTube 비디오 검색 기능을 사용하려면 필수입니다.
 
 ## Docker Hub에서 이미지 받아오기
 

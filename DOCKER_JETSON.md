@@ -48,6 +48,7 @@ pip3 install docker-compose
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
+YOUTUBE_API_KEY=your_youtube_api_key_here
 STT_SERVER_URL=http://host.docker.internal:8003
 FRONTEND_SERVER_URL=http://localhost:3000
 ```

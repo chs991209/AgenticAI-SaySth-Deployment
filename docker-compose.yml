@@ -11,6 +11,7 @@ services:
       - "8002:8002"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
     # volumes:
     #   # 개발 시 코드 변경을 반영하려면 주석 해제
     #   # - .:/app
