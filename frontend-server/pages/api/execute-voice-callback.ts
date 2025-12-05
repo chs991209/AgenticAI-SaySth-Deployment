@@ -24,7 +24,9 @@ let pendingTimeout: NodeJS.Timeout | null = null
  * 
  * 검증 방법:
  * 1. Referer 또는 Origin 헤더에서 Agentic AI 서버 호스트 확인
- * 2. X-Forwarded-For 헤더를 통한 IP 주소 확인 (선택적)
+ * 2. FRONTEND_SERVER_URL의 호스트 확인 (ngrok 등 프록시 사용 시)
+ * 3. X-Forwarded-For 헤더를 통한 IP 주소 확인 (선택적)
+ * 4. Docker 네트워크 내부 통신 허용
  * 
  * 주의: 개발 환경에서는 localhost/127.0.0.1도 허용하되,
  * 프로덕션 환경에서는 더 엄격한 검증이 필요할 수 있습니다.
@@ -33,6 +35,19 @@ function isRequestFromAgenticAIServer(req: NextApiRequest): boolean {
   try {
     const agenticAIServerUrl = new URL(env.AGENTIC_AI_SERVER_URL)
     const agenticAIHost = agenticAIServerUrl.hostname
+    
+    // FRONTEND_SERVER_URL의 호스트도 허용 (ngrok 등 프록시 사용 시)
+    let allowedHosts = [agenticAIHost]
+    try {
+      const frontendServerUrl = new URL(env.FRONTEND_SERVER_URL)
+      const frontendHost = frontendServerUrl.hostname
+      // ngrok 도메인인 경우 (ngrok.io, ngrok-free.app 등)
+      if (frontendHost.includes('ngrok') || frontendHost.includes('ngrok-free')) {
+        allowedHosts.push(frontendHost)
+      }
+    } catch (e) {
+      // FRONTEND_SERVER_URL 파싱 실패 시 무시
+    }
     
     // Referer 또는 Origin 헤더 확인
     const referer = req.headers.referer || req.headers.origin || ''
@@ -43,15 +58,15 @@ function isRequestFromAgenticAIServer(req: NextApiRequest): boolean {
         const refererUrl = new URL(referer)
         const refererHost = refererUrl.hostname
         
-        // 호스트가 일치하는지 확인
-        if (refererHost === agenticAIHost) {
+        // 허용된 호스트 목록에 있는지 확인
+        if (allowedHosts.includes(refererHost)) {
           return true
         }
         
         // localhost/127.0.0.1인 경우 추가 검증
         // Agentic AI 서버도 localhost인 경우 허용
         if ((refererHost === 'localhost' || refererHost === '127.0.0.1') &&
-            (agenticAIHost === 'localhost' || agenticAIHost === '127.0.0.1')) {
+            (agenticAIHost === 'localhost' || agenticAIHost === '127.0.0.1' || agenticAIHost === 'agentic-ai-server')) {
           return true
         }
       } catch (e) {
@@ -64,23 +79,34 @@ function isRequestFromAgenticAIServer(req: NextApiRequest): boolean {
     const realIp = req.headers['x-real-ip']
     const remoteAddress = req.socket?.remoteAddress
     
-    // localhost/127.0.0.1인 경우, IP 주소가 localhost인지 확인
-    if (agenticAIHost === 'localhost' || agenticAIHost === '127.0.0.1') {
+    // Docker 네트워크 내부 통신 허용 (agentic-ai-server 호스트인 경우)
+    if (agenticAIHost === 'agentic-ai-server' || agenticAIHost === 'localhost' || agenticAIHost === '127.0.0.1') {
       const ip = forwardedFor?.toString().split(',')[0].trim() || 
                  realIp?.toString() || 
                  remoteAddress
       
-      if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
-        // localhost에서 온 요청인 경우, Referer가 없어도 허용 (개발 환경)
-        // 프로덕션에서는 더 엄격한 검증 필요
+      // localhost 또는 Docker 네트워크 내부 IP인 경우 허용
+      if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || 
+          ip?.startsWith('172.') || ip?.startsWith('192.168.') || ip?.startsWith('10.')) {
+        // Docker 네트워크 내부 통신 또는 localhost에서 온 요청인 경우 허용
+        return true
+      }
+    }
+    
+    // ngrok을 통한 요청인 경우 (X-Forwarded-Host 헤더 확인)
+    const forwardedHost = req.headers['x-forwarded-host']
+    if (forwardedHost && typeof forwardedHost === 'string') {
+      const forwardedHostname = forwardedHost.split(':')[0]
+      if (allowedHosts.some(host => forwardedHostname.includes(host) || host.includes(forwardedHostname))) {
         return true
       }
     }
     
     console.warn(
       `[execute-voice-callback] Request origin validation failed. ` +
-      `Expected: ${agenticAIHost}, ` +
+      `Expected hosts: ${allowedHosts.join(', ')}, ` +
       `Referer: ${referer}, ` +
+      `X-Forwarded-Host: ${forwardedHost}, ` +
       `IP: ${forwardedFor || realIp || remoteAddress}`
     )
     return false

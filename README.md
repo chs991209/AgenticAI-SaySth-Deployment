@@ -26,6 +26,7 @@ cp .env.example .env
 # .env 파일을 열어서 다음 API 키들을 설정하세요:
 # - OPENAI_API_KEY: OpenAI API 키 (필수)
 # - YOUTUBE_API_KEY: YouTube Data API v3 키 (YouTube 비디오 검색 기능 사용 시 필수)
+# - FRONTEND_SERVER_URL: Frontend 서버 URL (callback URL이 제공되지 않을 때 사용, 기본값: http://localhost:3000)
 ```
 
 ### 2. Agentic AI Server 실행

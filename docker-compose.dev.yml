@@ -12,11 +12,14 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
     volumes:
       # 코드 변경을 실시간으로 반영
       - .:/app
       - /app/__pycache__
       - /app/agenticai-saysth-archive
+    networks:
+      - app-network
     restart: unless-stopped
     command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
 
@@ -30,7 +33,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+      - AGENTIC_AI_SERVER_URL=${AGENTIC_AI_SERVER_URL:-http://agentic-ai-server:8002}
       - STT_SERVER_URL=${STT_SERVER_URL:-http://host.docker.internal:8003}
       - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
       - NODE_ENV=development
@@ -44,6 +47,12 @@ services:
       - /app/.next
     depends_on:
       - agentic-ai-server
+    networks:
+      - app-network
     restart: unless-stopped
     command: npm run dev
+
+networks:
+  app-network:
+    driver: bridge
 

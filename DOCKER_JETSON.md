@@ -49,6 +49,11 @@ pip3 install docker-compose
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
 YOUTUBE_API_KEY=your_youtube_api_key_here
+FRONTEND_SERVER_URL=http://localhost:3000
+# AGENTIC_AI_SERVER_URL은 선택사항 (기본값: http://agentic-ai-server:8002)
+# Docker Compose 사용 시 자동으로 Docker 네트워크 내부 통신 사용
+# 개별 배포 시에는 http://localhost:8002로 설정
+AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
 STT_SERVER_URL=http://host.docker.internal:8003
 FRONTEND_SERVER_URL=http://localhost:3000
 ```

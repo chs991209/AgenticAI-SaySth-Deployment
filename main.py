@@ -11,6 +11,7 @@ from agent_utils.groupchat.groupchat_manager import (
 
 import time
 import httpx
+import os
 
 
 app = FastAPI()
@@ -112,6 +113,13 @@ async def execute_voice_prompt(request: Request):
     prompt = body.get("prompt", "").strip()
     callback_url = body.get("callback_url")
     
+    # callback_url이 제공되지 않으면 환경 변수에서 가져오기
+    if not callback_url:
+        frontend_server_url = os.getenv("FRONTEND_SERVER_URL")
+        if frontend_server_url:
+            callback_url = f"{frontend_server_url}/execute-voice-callback"
+            print(f"[execute-voice-command] Using FRONTEND_SERVER_URL from env: {callback_url}")
+    
     if not prompt:
         # callback_url이 있으면 에러를 callback으로 전송
         if callback_url:
@@ -195,6 +203,8 @@ async def execute_voice_prompt(request: Request):
                         timeout=10.0
                     )
                     print(f"[execute-voice-command] Sent response to callback: {callback_url}, status: {callback_response.status_code}")
+                    # callback 성공 시 빈 응답 반환 (callback으로 응답 전송 완료)
+                    return JSONResponse(content={"message": "Response sent to callback"}, status_code=200)
             except Exception as e:
                 print(f"[ERROR] Failed to send response to callback: {e}")
                 # callback 실패 시 일반 응답 반환

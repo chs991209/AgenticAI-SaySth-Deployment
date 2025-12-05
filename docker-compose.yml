@@ -12,10 +12,13 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
     # volumes:
     #   # 개발 시 코드 변경을 반영하려면 주석 해제
     #   # - .:/app
     #   # - /app/__pycache__
+    networks:
+      - app-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/docs').close()"]
@@ -35,7 +38,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+      - AGENTIC_AI_SERVER_URL=${AGENTIC_AI_SERVER_URL:-http://agentic-ai-server:8002}
       # ============================================
       # STT 서버 설정 (현재: 호스트에서 실행 중)
       # ============================================
@@ -49,6 +52,8 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - agentic-ai-server
+    networks:
+      - app-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/execute', (r) => { process.exit(r.statusCode === 405 ? 0 : 1) })"]
@@ -56,6 +61,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+networks:
+  app-network:
+    driver: bridge
 
   # ============================================
   # STT 서버 컨테이너화 (추후 사용 시 주석 해제)

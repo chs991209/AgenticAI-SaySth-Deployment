@@ -124,7 +124,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+      - AGENTIC_AI_SERVER_URL=${AGENTIC_AI_SERVER_URL:-http://agentic-ai-server:8002}
       - STT_SERVER_URL=${STT_SERVER_URL:-http://host.docker.internal:8003}
       - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
     extra_hosts:
@@ -140,14 +140,45 @@ services:
       start_period: 40s
 ```
 
-### 2. 이미지 풀 및 실행
+### 2. 환경 변수 설정
+
+프로젝트 루트에 `.env` 파일을 생성하세요:
+
+```bash
+# .env 파일 생성
+cat > .env << EOF
+# Docker Hub 사용자명 (이미지 이름에 사용)
+DOCKERHUB_USERNAME=chs991209
+
+# Agentic AI Server 환경 변수
+OPENAI_API_KEY=your_openai_api_key_here
+YOUTUBE_API_KEY=your_youtube_api_key_here
+FRONTEND_SERVER_URL=http://localhost:3000
+
+# Frontend Server 환경 변수
+# AGENTIC_AI_SERVER_URL은 선택사항 (기본값: http://agentic-ai-server:8002)
+# Docker Compose 사용 시 자동으로 Docker 네트워크 내부 통신 사용
+# 개별 배포 시에는 http://localhost:8002로 설정
+AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+STT_SERVER_URL=http://host.docker.internal:8003
+FRONTEND_SERVER_URL=http://localhost:3000
+EOF
+```
+
+**중요**: 
+- `OPENAI_API_KEY`는 반드시 설정해야 합니다.
+- `YOUTUBE_API_KEY`는 YouTube 비디오 검색 기능을 사용하려면 필수입니다.
+- `AGENTIC_AI_SERVER_URL`은 선택사항입니다. 설정하지 않으면 기본값(`http://agentic-ai-server:8002`)이 사용됩니다.
+- Docker Compose 사용 시 자동으로 Docker 네트워크 내부 통신을 사용하므로 별도 설정이 필요 없습니다.
+
+### 3. 이미지 풀 및 실행
 
 ```bash
 # Docker Hub에서 이미지 가져오기
-docker-compose pull
+docker-compose -f docker-compose.hub.yml pull
 
 # 컨테이너 실행
-docker-compose up -d
+docker-compose -f docker-compose.hub.yml up -d
 ```
 
 ## 빌드 및 푸시 스크립트

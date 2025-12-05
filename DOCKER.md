@@ -18,6 +18,10 @@
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
 YOUTUBE_API_KEY=your_youtube_api_key_here
+# AGENTIC_AI_SERVER_URL은 선택사항 (기본값: http://agentic-ai-server:8002)
+# Docker Compose 사용 시 자동으로 Docker 네트워크 내부 통신 사용
+# 개별 배포 시에는 http://localhost:8002로 설정
+AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
 STT_SERVER_URL=http://host.docker.internal:8003
 FRONTEND_SERVER_URL=http://localhost:3000
 ```
@@ -84,11 +88,16 @@ docker run -d \
 ### Agentic AI Server
 - `OPENAI_API_KEY` (필수): OpenAI API 키
 - `YOUTUBE_API_KEY` (필수): YouTube Data API v3 키 (YouTube 비디오 검색 기능 사용 시)
+- `FRONTEND_SERVER_URL` (선택): Frontend 서버 URL (callback URL이 제공되지 않을 때 사용)
+  - 기본값: `http://localhost:3000`
+  - callback_url이 요청에 포함되지 않으면 자동으로 `${FRONTEND_SERVER_URL}/execute-voice-callback`을 사용
 
 ### Frontend Server
-- `AGENTIC_AI_SERVER_URL` (필수): Agentic AI 서버 URL
-  - Docker Compose 사용 시: `http://agentic-ai-server:8002`
-  - 개별 배포 시: `http://localhost:8002` 또는 실제 서버 주소
+- `AGENTIC_AI_SERVER_URL` (선택): Agentic AI 서버 URL
+  - 기본값: `http://agentic-ai-server:8002` (`.env`에 설정하지 않을 경우, Docker Compose 사용 시)
+  - Docker Compose 사용 시: 자동으로 Docker 네트워크 내부 통신 사용 (서비스 이름으로 DNS 해석)
+  - 개별 배포 시: `http://localhost:8002` 또는 실제 서버 주소로 설정 필요
+  - `.env` 파일에서 설정하거나 환경 변수로 전달 가능
 - `STT_SERVER_URL` (선택): STT 서버 URL (기본값: `http://host.docker.internal:8003`)
 - `FRONTEND_SERVER_URL` (선택): Frontend 서버 URL (기본값: `http://localhost:3000`)
 
