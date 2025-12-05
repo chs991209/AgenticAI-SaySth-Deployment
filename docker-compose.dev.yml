@@ -1,0 +1,48 @@
+version: '3.8'
+
+# 개발 환경용 docker-compose (코드 변경 시 자동 반영)
+services:
+  agentic-ai-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.agentic-ai
+    container_name: agentic-ai-server-dev
+    ports:
+      - "8002:8002"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # 코드 변경을 실시간으로 반영
+      - .:/app
+      - /app/__pycache__
+      - /app/agenticai-saysth-archive
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+  frontend-server:
+    build:
+      context: ./frontend-server
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+    container_name: frontend-server-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+      - STT_SERVER_URL=${STT_SERVER_URL:-http://host.docker.internal:8003}
+      - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
+      - NODE_ENV=development
+    # Linux 환경에서 host.docker.internal 지원
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # 코드 변경을 실시간으로 반영
+      - ./frontend-server:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - agentic-ai-server
+    restart: unless-stopped
+    command: npm run dev
+

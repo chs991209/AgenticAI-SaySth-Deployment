@@ -1,0 +1,93 @@
+services:
+  agentic-ai-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.agentic-ai
+      # Jetson AGX Orin (ARM64) 지원
+      platforms:
+        - linux/arm64
+    container_name: agentic-ai-server
+    ports:
+      - "8002:8002"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    # volumes:
+    #   # 개발 시 코드 변경을 반영하려면 주석 해제
+    #   # - .:/app
+    #   # - /app/__pycache__
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/docs').close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend-server:
+    build:
+      context: ./frontend-server
+      dockerfile: Dockerfile
+      # Jetson AGX Orin (ARM64) 지원
+      platforms:
+        - linux/arm64
+    container_name: frontend-server
+    ports:
+      - "3000:3000"
+    environment:
+      - AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+      # ============================================
+      # STT 서버 설정 (현재: 호스트에서 실행 중)
+      # ============================================
+      # STT 서버는 Jetson AGX Orin 호스트의 localhost:8003에서 실행 중
+      # Docker 컨테이너에서 호스트의 STT 서버에 접근하기 위해 host.docker.internal 사용
+      - STT_SERVER_URL=${STT_SERVER_URL:-http://host.docker.internal:8003}
+      - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
+    # Linux 환경에서 host.docker.internal 지원
+    # 이 설정으로 컨테이너가 호스트 머신의 localhost:8003에 접근 가능
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - agentic-ai-server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/execute', (r) => { process.exit(r.statusCode === 405 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================
+  # STT 서버 컨테이너화 (추후 사용 시 주석 해제)
+  # ============================================
+  # STT 서버를 컨테이너화할 경우 아래 설정을 활성화하고,
+  # frontend-server의 STT_SERVER_URL을 http://stt-server:8003으로 변경
+  #
+  # stt-server:
+  #   build:
+  #     context: ./stt-server  # STT 서버 코드 경로
+  #     dockerfile: Dockerfile.stt
+  #     platforms:
+  #       - linux/arm64
+  #   container_name: stt-server
+  #   ports:
+  #     - "8003:8003"
+  #   environment:
+  #     - CUDA_VISIBLE_DEVICES=0
+  #   # Jetson GPU 지원 - NVIDIA Container Toolkit 필요
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   # 또는 구버전 Docker Compose의 경우:
+  #   # runtime: nvidia
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8003/health"] || exit 1
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+

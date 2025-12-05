@@ -1,0 +1,54 @@
+# Docker Hub 이미지를 사용하는 docker-compose 설정
+# 사용법: docker-compose -f docker-compose.hub.yml up -d
+# 
+# 환경 변수 설정:
+# export DOCKERHUB_USERNAME=chs991209
+# 또는 .env 파일에 DOCKERHUB_USERNAME=chs991209 추가
+
+services:
+  agentic-ai-server:
+    # Docker Hub에서 이미지 사용 (Jetson AGX Orin용 ARM64)
+    # 빌드 대신 이미지 사용 (빌드 시간 절약)
+    # 명시적으로 arm64 태그 사용 (Jetson AGX Orin은 ARM64 아키텍처)
+    image: ${DOCKERHUB_USERNAME:-chs991209}/agentic-ai-server:arm64
+    container_name: agentic-ai-server
+    ports:
+      - "8002:8002"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/docs').close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend-server:
+    # Docker Hub에서 이미지 사용 (Jetson AGX Orin용 ARM64)
+    # 명시적으로 arm64 태그 사용 (Jetson AGX Orin은 ARM64 아키텍처)
+    image: ${DOCKERHUB_USERNAME:-chs991209}/frontend-server:arm64
+    container_name: frontend-server
+    ports:
+      - "3000:3000"
+    environment:
+      - AGENTIC_AI_SERVER_URL=http://agentic-ai-server:8002
+      # ============================================
+      # STT 서버 설정 (현재: 호스트에서 실행 중)
+      # ============================================
+      # STT 서버는 Jetson AGX Orin 호스트의 localhost:8003에서 실행 중
+      - STT_SERVER_URL=${STT_SERVER_URL:-http://host.docker.internal:8003}
+      - FRONTEND_SERVER_URL=${FRONTEND_SERVER_URL:-http://localhost:3000}
+    # Linux 환경에서 host.docker.internal 지원
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - agentic-ai-server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/execute', (r) => { process.exit(r.statusCode === 405 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

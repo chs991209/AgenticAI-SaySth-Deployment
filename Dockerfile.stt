@@ -1,0 +1,61 @@
+# STT Server Dockerfile for Jetson AGX Orin
+# NVIDIA Jetson용 베이스 이미지 사용 (ARM64 아키텍처)
+# 참고: 실제 STT 서버 코드 구조에 맞게 수정 필요
+
+# Jetson용 베이스 이미지 (L4T 기반)
+# 사용 가능한 태그: r35.2.1, r35.3.1 등 (Jetson SDK 버전에 맞춰 선택)
+FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.1-py3
+
+# 또는 PyTorch가 포함된 이미지 사용
+# FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.1-py3
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 시스템 의존성 설치
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-dev \
+    libasound2-dev \
+    portaudio19-dev \
+    libportaudio2 \
+    libsndfile1 \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 의존성 파일 복사 (STT 서버용 requirements.txt 필요)
+# COPY stt-server/requirements.txt ./requirements.txt
+# RUN pip3 install --no-cache-dir -r requirements.txt
+
+# 또는 직접 설치 (예시)
+# RUN pip3 install --no-cache-dir \
+#     torch \
+#     torchvision \
+#     torchaudio \
+#     transformers \
+#     librosa \
+#     soundfile \
+#     fastapi \
+#     uvicorn \
+#     numpy
+
+# STT 서버 코드 복사
+# COPY stt-server/ ./
+
+# 포트 노출
+EXPOSE 8003
+
+# 환경 변수 설정
+ENV CUDA_VISIBLE_DEVICES=0
+ENV PYTHONUNBUFFERED=1
+
+# 서버 실행 (실제 실행 명령어로 수정 필요)
+# CMD ["python3", "stt_server.py"]
+# 또는
+# CMD ["uvicorn", "stt_server:app", "--host", "0.0.0.0", "--port", "8003"]
+
+# 임시: 서버가 준비될 때까지 대기
+CMD ["tail", "-f", "/dev/null"]
+
+
