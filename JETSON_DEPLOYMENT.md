@@ -290,6 +290,147 @@ docker-compose -f docker-compose.hub.yml up -d
 
 ## 문제 해결
 
+### iptables raw 테이블 오류 (Docker 네트워크 설정 문제)
+
+Jetson AGX Orin에서 다음과 같은 오류가 발생하는 경우:
+
+```
+ERROR: can't initialize iptables table `raw': Table does not exist
+```
+
+**주의**: Jetson AGX Orin의 일부 커널 버전에서는 `iptable_raw` 모듈이 포함되지 않을 수 있습니다.
+
+**해결 방법 1: 기존 Docker 네트워크 삭제 후 재생성 (가장 간단, 권장)**
+
+```bash
+# 기존 네트워크 삭제
+docker network prune -f
+
+# 또는 특정 네트워크만 삭제
+docker network rm agenticai-saysth-deployment_app-network 2>/dev/null || true
+
+# docker-compose로 네트워크 강제 재생성
+docker-compose -f docker-compose.hub.yml down
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+**주의**: 최신 버전의 docker-compose 파일은 이미 네트워크 설정이 최적화되어 있습니다. 
+git pull로 최신 버전을 받은 후 위 명령어를 실행하세요.
+
+**해결 방법 2: Docker daemon.json 설정 변경 (권장)**
+
+```bash
+# Docker daemon.json 파일 생성/수정
+sudo nano /etc/docker/daemon.json
+```
+
+다음 내용 추가:
+```json
+{
+  "iptables": false,
+  "ip-forward": true
+}
+```
+
+또는:
+```json
+{
+  "experimental": false,
+  "ip-forward": true
+}
+```
+
+```bash
+# Docker 재시작
+sudo systemctl restart docker
+```
+
+**해결 방법 3: Docker daemon.json에서 iptables 비활성화**
+
+```bash
+# Docker daemon.json 파일 생성/수정
+sudo nano /etc/docker/daemon.json
+```
+
+다음 내용 추가 (기존 내용이 있으면 병합):
+```json
+{
+  "iptables": false,
+  "ip-forward": true,
+  "experimental": false
+}
+```
+
+**중요**: JSON 형식이 올바른지 확인하세요. 쉼표, 중괄호 등이 정확해야 합니다.
+
+```bash
+# JSON 문법 검증 (선택적)
+python3 -m json.tool /etc/docker/daemon.json
+
+# Docker 재시작
+sudo systemctl restart docker
+```
+
+**만약 Docker 재시작이 실패하는 경우:**
+
+```bash
+# 1. Docker 서비스 상태 확인 (systemd 사용 시)
+sudo systemctl status docker.service
+
+# 또는 service 명령어 사용 (systemd가 없는 경우)
+sudo service docker status
+
+# 2. 상세 로그 확인 (systemd 사용 시)
+sudo journalctl -xeu docker.service
+
+# 또는 Docker 로그 직접 확인
+sudo tail -f /var/log/docker.log
+
+# 3. daemon.json 문법 오류 확인
+sudo cat /etc/docker/daemon.json | python3 -m json.tool
+
+# 4. daemon.json 백업 후 기본 설정으로 복원
+sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.backup
+echo '{}' | sudo tee /etc/docker/daemon.json
+sudo systemctl restart docker
+
+# 5. 또는 daemon.json 파일 삭제 (기본 설정 사용)
+sudo rm /etc/docker/daemon.json
+
+# Docker 재시작 (systemd 사용 시)
+sudo systemctl restart docker
+
+# 또는 service 명령어 사용
+sudo service docker restart
+
+# 또는 Docker 데몬 직접 재시작
+sudo killall dockerd
+sudo dockerd &
+```
+
+Docker가 정상적으로 시작되면:
+
+```bash
+# 기존 네트워크 삭제
+docker network prune -f
+
+# 다시 시도
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+**해결 방법 4: iptables-legacy 사용**
+
+```bash
+# iptables-legacy로 전환
+sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+
+# Docker 재시작
+sudo systemctl restart docker
+```
+
+**권장 순서**: 방법 1 → 방법 2 → 방법 3 → 방법 4
+
 ### 이미지 pull 실패
 
 ```bash

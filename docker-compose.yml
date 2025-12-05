@@ -65,6 +65,12 @@ services:
 networks:
   app-network:
     driver: bridge
+    # Jetson AGX Orin에서 iptables raw 테이블 오류 방지
+    # iptables를 사용하지 않는 간단한 네트워크 설정
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
 
   # ============================================
   # STT 서버 컨테이너화 (추후 사용 시 주석 해제)
