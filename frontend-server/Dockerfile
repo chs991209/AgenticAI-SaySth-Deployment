@@ -36,5 +36,6 @@ COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 3000
 
 # 서버 실행
-CMD ["npm", "start"]
-
+# -- 뒤에 오는 옵션은 Next.js start 명령어로 전달됩니다.
+# -H 0.0.0.0: 모든 IP 접속 허용 (외부 접속 필수)
+CMD ["npm", "start", "--", "-p", "3000", "-H", "0.0.0.0"]
