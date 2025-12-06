@@ -29,8 +29,23 @@ if [ ! -f "docker-compose.hub.yml" ]; then
     exit 1
 fi
 
+# 기존 컨테이너 정리 (다른 compose 파일로 실행 중인 경우 대비)
+echo -e "${YELLOW}[0/3] 기존 컨테이너 정리 중...${NC}"
+# 모든 docker-compose 파일로 실행 중인 컨테이너 정리
+docker-compose -f docker-compose.hub.yml down 2>/dev/null || true
+docker-compose -f docker-compose.yml down 2>/dev/null || true
+docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
+
+# 기존 컨테이너가 있으면 제거 (이름으로 직접 제거)
+if docker ps -a --format '{{.Names}}' | grep -qE '^(agentic-ai-server|frontend-server|agentic-ai-server-dev|frontend-server-dev)$'; then
+    echo -e "${YELLOW}기존 컨테이너 제거 중...${NC}"
+    docker rm -f agentic-ai-server agentic-ai-server-dev frontend-server frontend-server-dev 2>/dev/null || true
+fi
+
+echo ""
+
 # 새 이미지 가져오기
-echo -e "${GREEN}[1/2] 새 이미지 가져오는 중...${NC}"
+echo -e "${GREEN}[1/3] 새 이미지 가져오는 중...${NC}"
 docker-compose -f docker-compose.hub.yml pull
 
 if [ $? -eq 0 ]; then
@@ -42,16 +57,22 @@ fi
 
 echo ""
 
-# 컨테이너 재시작
-echo -e "${GREEN}[2/2] 컨테이너 재시작 중...${NC}"
-docker-compose -f docker-compose.hub.yml up -d --force-recreate
+# 컨테이너 시작
+echo -e "${GREEN}[2/3] 컨테이너 시작 중...${NC}"
+docker-compose -f docker-compose.hub.yml up -d
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ 컨테이너 재시작 완료${NC}"
+    echo -e "${GREEN}✓ 컨테이너 시작 완료${NC}"
 else
-    echo -e "${RED}✗ 컨테이너 재시작 실패${NC}"
+    echo -e "${RED}✗ 컨테이너 시작 실패${NC}"
     exit 1
 fi
+
+echo ""
+
+# 컨테이너 상태 확인
+echo -e "${GREEN}[3/3] 컨테이너 상태 확인 중...${NC}"
+sleep 2
 
 echo ""
 echo -e "${GREEN}=== 컨테이너 상태 ===${NC}"
