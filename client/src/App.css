@@ -1,0 +1,373 @@
+.app {
+  width: 100%;
+}
+
+.container {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.form {
+  margin-bottom: 30px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.textarea {
+  width: 100%;
+  padding: 16px;
+  padding-right: 80px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.textarea:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.microphone-container {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 10;
+}
+
+.microphone-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.microphone-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.microphone-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.microphone-button.recording {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.microphone-button.processing {
+  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.microphone-button .recording-indicator {
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.microphone-button .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.submit-button {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.result {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.result-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.command-type-icon {
+  font-size: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  cursor: help;
+  transition: all 0.3s ease;
+}
+
+.command-type-icon:hover {
+  background-color: #e0e0e0;
+  transform: scale(1.1);
+}
+
+.actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.action-item {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.action-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-key {
+  font-size: 1.1rem;
+  color: #667eea;
+  text-transform: capitalize;
+}
+
+.action-values {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.action-values li {
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 3px solid #667eea;
+  word-break: break-all;
+}
+
+.action-values li:last-child {
+  margin-bottom: 0;
+}
+
+.no-actions {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.execution-result {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.execution-status {
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.status-success {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-warning {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.status-error {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.status-info {
+  color: #17a2b8;
+  font-weight: 600;
+}
+
+.execution-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.execution-item {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.execution-action,
+.execution-input {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.execution-output {
+  margin-top: 12px;
+}
+
+.execution-results-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 8px 0 0 0;
+}
+
+.execution-result-item {
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 3px solid #667eea;
+  word-break: break-all;
+}
+
+.execution-result-item:last-child {
+  margin-bottom: 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.status-badge.status-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.status-error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-badge.status-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.error-text {
+  color: #dc3545;
+}
+
+.info-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+

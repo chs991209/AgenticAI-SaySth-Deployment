@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { env } from '../../lib/env'
 import { URL } from 'url'
+import { setCorsHeaders, handleCorsPreflight } from '../../lib/cors'
 
 /**
  * Agent server가 음성 명령 처리 후 응답을 보내는 callback 엔드포인트
@@ -120,6 +121,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<CallbackResponse>
 ) {
+  // CORS preflight 요청 처리
+  if (handleCorsPreflight(req, res)) {
+    return
+  }
+
+  // CORS 헤더 설정
+  setCorsHeaders(res)
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' })
   }

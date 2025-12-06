@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { env } from '../../lib/env'
 import { registerPendingRequest } from './execute-voice-callback'
+import { setCorsHeaders, handleCorsPreflight } from '../../lib/cors'
 
 interface ExecuteRequest {
   prompt?: string // 텍스트 명령용
@@ -21,6 +22,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ExecuteResponse>
 ) {
+  // CORS preflight 요청 처리
+  if (handleCorsPreflight(req, res)) {
+    return
+  }
+
+  // CORS 헤더 설정
+  setCorsHeaders(res)
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
