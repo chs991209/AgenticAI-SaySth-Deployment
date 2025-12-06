@@ -15,10 +15,15 @@ interface CallbackResponse {
   message?: string
 }
 
-// 현재 대기 중인 Promise (단일 요청 처리)
-let pendingResolve: ((value: any) => void) | null = null
-let pendingReject: ((error: any) => void) | null = null
-let pendingTimeout: NodeJS.Timeout | null = null
+// 요청 ID 기반으로 여러 요청을 동시에 처리할 수 있도록 Map 사용
+// Next.js 개발 모드에서 모듈 리로드 시에도 안정적으로 작동
+interface PendingRequest {
+  resolve: (value: any) => void
+  reject: (error: any) => void
+  timeout: NodeJS.Timeout
+}
+
+const pendingRequests = new Map<string, PendingRequest>()
 
 /**
  * 요청이 Agentic AI 서버로부터 오는지 검증
@@ -139,56 +144,82 @@ export default async function handler(
     return res.status(403).json({ success: false, message: 'Forbidden: Only Agentic AI server can call this endpoint' })
   }
 
-  const { actions_list, error } = req.body
+  // request_id는 query parameter 또는 body에서 가져오기
+  const requestIdFromQuery = req.query.request_id as string | undefined
+  const { request_id: requestIdFromBody, actions_list, error } = req.body
+  const request_id = requestIdFromQuery || requestIdFromBody
 
-  if (!pendingResolve || !pendingReject) {
-    console.warn('[execute-voice-callback] No pending request found')
-    return res.status(404).json({ success: false, message: 'No pending request' })
+  // request_id가 없으면 기존 방식으로 동작 (하위 호환성)
+  if (!request_id) {
+    console.warn('[execute-voice-callback] No request_id provided, trying to find any pending request')
+    // 가장 오래된 요청 찾기 (단일 요청 처리 모드)
+    const firstRequest = Array.from(pendingRequests.values())[0]
+    if (!firstRequest) {
+      console.warn('[execute-voice-callback] No pending request found')
+      return res.status(404).json({ success: false, message: 'No pending request' })
+    }
+    
+    // 타임아웃 제거
+    clearTimeout(firstRequest.timeout)
+    pendingRequests.clear()
+    
+    // 응답 처리
+    if (error) {
+      firstRequest.reject(new Error(error))
+    } else {
+      firstRequest.resolve({ actions_list })
+    }
+    
+    return res.status(200).json({ success: true })
+  }
+
+  // request_id로 특정 요청 찾기
+  const pendingRequest = pendingRequests.get(request_id)
+  if (!pendingRequest) {
+    console.warn(`[execute-voice-callback] No pending request found for request_id: ${request_id}`)
+    return res.status(404).json({ success: false, message: `No pending request found for request_id: ${request_id}` })
   }
 
   // 타임아웃 제거
-  if (pendingTimeout) {
-    clearTimeout(pendingTimeout)
-    pendingTimeout = null
-  }
-
-  // Promise 참조 저장 후 초기화
-  const resolve = pendingResolve
-  const reject = pendingReject
-  pendingResolve = null
-  pendingReject = null
+  clearTimeout(pendingRequest.timeout)
+  pendingRequests.delete(request_id)
 
   // 응답 처리
   if (error) {
-    reject(new Error(error))
+    pendingRequest.reject(new Error(error))
   } else {
-    resolve({ actions_list })
+    pendingRequest.resolve({ actions_list })
   }
 
   return res.status(200).json({ success: true })
 }
 
-// Pending 요청 등록 함수 (execute-voice.ts에서 사용)
+// Pending 요청 등록 함수 (execute.ts에서 사용)
 export function registerPendingRequest(
   resolve: (value: any) => void,
   reject: (error: any) => void,
-  timeoutMs: number = 30000
-) {
-  // 기존 요청이 있으면 타임아웃 처리
-  if (pendingTimeout) {
-    clearTimeout(pendingTimeout)
-  }
-  if (pendingReject) {
-    pendingReject(new Error('New request received, previous request cancelled'))
+  timeoutMs: number = 30000,
+  requestId?: string
+): string {
+  // request_id가 제공되지 않으면 자동 생성
+  const id = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
+  // 기존 요청이 있으면 타임아웃 처리 (동일 request_id인 경우)
+  const existingRequest = pendingRequests.get(id)
+  if (existingRequest) {
+    clearTimeout(existingRequest.timeout)
+    existingRequest.reject(new Error('Request replaced by new request with same ID'))
   }
 
-  pendingResolve = resolve
-  pendingReject = reject
-  pendingTimeout = setTimeout(() => {
-    pendingResolve = null
-    pendingReject = null
-    pendingTimeout = null
+  // 타임아웃 설정
+  const timeout = setTimeout(() => {
+    pendingRequests.delete(id)
     reject(new Error('Request timeout'))
   }, timeoutMs)
+
+  // 요청 등록
+  pendingRequests.set(id, { resolve, reject, timeout })
+
+  return id
 }
 

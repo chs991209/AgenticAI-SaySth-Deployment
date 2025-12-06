@@ -42,7 +42,7 @@ Which agent should reply next?
 # #ACTIONSGENERATIONDONE이 반드시 있어야 종료되도록 설정
 # MaxMessageTermination은 안전장치로만 사용 (더 큰 값으로 설정)
 termination = TextMentionTermination("#ACTIONSGENERATIONDONE") | MaxMessageTermination(
-    500
+    1000
 )
 
 

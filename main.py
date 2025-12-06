@@ -113,6 +113,18 @@ async def execute_voice_prompt(request: Request):
     prompt = body.get("prompt", "").strip()
     callback_url = body.get("callback_url")
     
+    # callback_url에서 request_id 추출 (query parameter)
+    request_id = None
+    if callback_url:
+        try:
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(callback_url)
+            query_params = parse_qs(parsed.query)
+            if 'request_id' in query_params:
+                request_id = query_params['request_id'][0]
+        except Exception as e:
+            print(f"[WARNING] Failed to extract request_id from callback_url: {e}")
+    
     # callback_url이 제공되지 않으면 환경 변수에서 가져오기
     if not callback_url:
         frontend_server_url = os.getenv("FRONTEND_SERVER_URL")
@@ -123,12 +135,15 @@ async def execute_voice_prompt(request: Request):
     if not prompt:
         # callback_url이 있으면 에러를 callback으로 전송
         if callback_url:
+            error_data = {"error": "Empty prompt"}
+            if request_id:
+                error_data["request_id"] = request_id
             try:
                 async with httpx.AsyncClient() as client:
                     await client.post(
                         callback_url,
-                        json={"error": "Empty prompt"},
-                        timeout=10.0
+                        json=error_data,
+                        timeout=20.0
                     )
             except Exception as e:
                 print(f"[ERROR] Failed to send error to callback: {e}")
@@ -195,14 +210,18 @@ async def execute_voice_prompt(request: Request):
             else:
                 response_data = {"error": "No actions found"}
             
+            # request_id가 있으면 응답에 포함
+            if request_id:
+                response_data["request_id"] = request_id
+            
             try:
                 async with httpx.AsyncClient() as client:
                     callback_response = await client.post(
                         callback_url,
                         json=response_data,
-                        timeout=10.0
+                        timeout=20.0
                     )
-                    print(f"[execute-voice-command] Sent response to callback: {callback_url}, status: {callback_response.status_code}")
+                    print(f"[execute-voice-command] Sent response to callback: {callback_url}, status: {callback_response.status_code}, request_id: {request_id}")
                     # callback 성공 시 빈 응답 반환 (callback으로 응답 전송 완료)
                     return JSONResponse(content={"message": "Response sent to callback"}, status_code=200)
             except Exception as e:
@@ -220,12 +239,15 @@ async def execute_voice_prompt(request: Request):
 
     # Intent not recognized 처리
     if callback_url:
+        error_data = {"error": "Intent not recognized"}
+        if request_id:
+            error_data["request_id"] = request_id
         try:
             async with httpx.AsyncClient() as client:
                 await client.post(
                     callback_url,
-                    json={"error": "Intent not recognized"},
-                    timeout=10.0
+                    json=error_data,
+                    timeout=20.0
                 )
         except Exception as e:
             print(f"[ERROR] Failed to send error to callback: {e}")

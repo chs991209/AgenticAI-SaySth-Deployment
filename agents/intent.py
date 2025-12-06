@@ -24,7 +24,7 @@ async def classify_intents_with_keywords(prompt: str) -> List[Dict[str, Any]]:
                 messages=[TextMessage(content=prompt, source="user")],
                 cancellation_token=cancellation_token,
             ),
-            timeout=40.0,
+            timeout=20.0,
         )
         # reply: Extracted message content
         reply = ""

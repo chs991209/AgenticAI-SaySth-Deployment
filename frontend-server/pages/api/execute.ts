@@ -82,12 +82,17 @@ export default async function handler(
       const FRONTEND_SERVER_URL = env.FRONTEND_SERVER_URL
       const callbackUrl = `${FRONTEND_SERVER_URL}/execute-voice-callback`
 
+      // 요청 ID 생성 (callback 매칭용)
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const callbackUrlWithId = `${callbackUrl}?request_id=${requestId}`
+
       console.log(`[execute] Sending audio to STT server: ${STT_SERVER_URL}`)
-      console.log(`[execute] Callback URL for Agent server: ${callbackUrl}`)
+      console.log(`[execute] Callback URL for Agent server: ${callbackUrlWithId}`)
+      console.log(`[execute] Request ID: ${requestId}`)
       
       // Promise를 사용하여 Agent server의 callback 응답을 기다림
       const agentResponsePromise = new Promise<{ actions_list?: Action[]; error?: string }>((resolve, reject) => {
-        registerPendingRequest(resolve, reject, 30000) // 30초 타임아웃
+        registerPendingRequest(resolve, reject, 30000, requestId) // 30초 타임아웃, request_id 전달
       })
 
       // 1. STT server로 음성 데이터 전송
@@ -99,7 +104,7 @@ export default async function handler(
         body: JSON.stringify({ 
           data: audio,
           agent_server_url: AGENTIC_AI_SERVER_URL,
-          callback_url: callbackUrl
+          callback_url: callbackUrlWithId
         }),
       })
 
