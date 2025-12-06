@@ -59,12 +59,16 @@ echo ""
 
 # 컨테이너 시작
 echo -e "${GREEN}[2/3] 컨테이너 시작 중...${NC}"
-docker-compose -f docker-compose.hub.yml up -d
+# docker-compose up -d의 출력을 리다이렉트하여 이벤트 오류 무시
+docker-compose -f docker-compose.hub.yml up -d 2>&1 | grep -v "KeyError" | grep -v "Exception in thread" || true
 
-if [ $? -eq 0 ]; then
+# 실제 컨테이너 상태 확인
+if docker ps --format '{{.Names}}' | grep -qE '^(agentic-ai-server|frontend-server)$'; then
     echo -e "${GREEN}✓ 컨테이너 시작 완료${NC}"
 else
     echo -e "${RED}✗ 컨테이너 시작 실패${NC}"
+    echo -e "${YELLOW}컨테이너 상태 확인 중...${NC}"
+    docker ps -a --filter "name=agentic-ai-server" --filter "name=frontend-server"
     exit 1
 fi
 
@@ -76,7 +80,11 @@ sleep 2
 
 echo ""
 echo -e "${GREEN}=== 컨테이너 상태 ===${NC}"
-docker-compose -f docker-compose.hub.yml ps
+# docker-compose ps가 실패하면 직접 확인
+if ! docker-compose -f docker-compose.hub.yml ps 2>/dev/null; then
+    echo -e "${YELLOW}docker-compose ps 실패, 직접 확인 중...${NC}"
+    docker ps --filter "name=agentic-ai-server" --filter "name=frontend-server" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+fi
 
 echo ""
 echo -e "${GREEN}=== 업데이트 완료! ===${NC}"
